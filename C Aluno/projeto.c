@@ -4,14 +4,16 @@
 #include <windows.h>
 
 /* ======================= Config DLL ======================= */
+/* Handler da DLL carregada em tempo de execução */
 static HMODULE g_hDll = NULL;
 
-/* Conven��o de chamada (Windows): __stdcall */
+/* Convenção de chamada padrão do Windows (__stdcall) */
 #ifndef CALLCONV
 #  define CALLCONV WINAPI
 #endif
 
 /* ======================= Assinaturas da DLL ======================= */
+/* Declaração dos tipos de função exportados pela DLL */
 typedef int (CALLCONV *AbreConexaoImpressora_t)(int, const char *, const char *, int);
 typedef int (CALLCONV *FechaConexaoImpressora_t)(void);
 typedef int (CALLCONV *ImpressaoTexto_t)(const char *, int, int, int);
@@ -27,6 +29,7 @@ typedef int (CALLCONV *ImprimeXMLCancelamentoSAT_t)(const char *, const char *, 
 typedef int (CALLCONV *InicializaImpressora_t)(void);
 
 /* ======================= Ponteiros ======================= */
+/* Ponteiros que vão receber os endereços das funções da DLL */
 static AbreConexaoImpressora_t        AbreConexaoImpressora        = NULL;
 static FechaConexaoImpressora_t       FechaConexaoImpressora       = NULL;
 static ImpressaoTexto_t               ImpressaoTexto               = NULL;
@@ -41,7 +44,8 @@ static ImprimeXMLSAT_t                ImprimeXMLSAT                = NULL;
 static ImprimeXMLCancelamentoSAT_t    ImprimeXMLCancelamentoSAT    = NULL;
 static InicializaImpressora_t         InicializaImpressora         = NULL;
 
-/* ======================= Configura��o ======================= */
+/* ======================= Configuração ======================= */
+/* Variáveis globais que guardam a config atual da impressora */
 static int   g_tipo      = 1;
 static char  g_modelo[64] = "i9";
 static char  g_conexao[128] = "USB";
@@ -49,22 +53,25 @@ static int   g_parametro = 0;
 static int   g_conectada = 0;
 
 /* ======================= Utilidades ======================= */
+/* Macro para carregar funções da DLL e falhar com log */
 #define LOAD_FN(h, name)                                                         \
     do {                                                                         \
         name = (name##_t)GetProcAddress((HMODULE)(h), #name);                    \
         if (!(name)) {                                                           \
-            fprintf(stderr, "Falha ao resolver s�mbolo %s (erro=%lu)\n",         \
+            fprintf(stderr, "Falha ao resolver símbolo %s (erro=%lu)\n",         \
                     #name, GetLastError());                                      \
             return 0;                                                            \
         }                                                                        \
     } while (0)
 
+/* Limpa buffer do teclado (evita inputs quebrados) */
 static void flush_entrada(void) {
     int c;
     while ((c = getchar()) != '\n' && c != EOF) { }
 }
 
-/* ======================= Fun��es para manipular a DLL ======================= */
+/* ======================= DLL: carregar e liberar ======================= */
+/* Carrega DLL e resolve todas as funções necessárias */
 static int carregarFuncoes(void)
 {
     g_hDll = LoadLibraryA("E1_Impressora01.dll");
@@ -73,6 +80,7 @@ static int carregarFuncoes(void)
         return 0;
     }
 
+    /* Resolve todas as funções */
     LOAD_FN(g_hDll, AbreConexaoImpressora);
     LOAD_FN(g_hDll, FechaConexaoImpressora);
     LOAD_FN(g_hDll, ImpressaoTexto);
@@ -90,6 +98,7 @@ static int carregarFuncoes(void)
     return 1;
 }
 
+/* Libera a DLL da memória */
 static void liberarBiblioteca(void)
 {
     if (g_hDll) {
@@ -98,8 +107,8 @@ static void liberarBiblioteca(void)
     }
 }
 
-/* ======================= Fun��es a serem implementadas pelos alunos ======================= */
-
+/* ======================= Funções do Menu ======================= */
+/* Menu de opções */
 static void exibirMenu(void)
 {
     printf("\n=========== MENU ===========\n");
@@ -117,6 +126,7 @@ static void exibirMenu(void)
     printf("----------------------------\n");
 }
 
+/* Configura parâmetros de conexão fornecidos pelo usuário */
 static void configurarConexao(void)
 {
 	printf("\n=== Configurar conexao ===\n");
@@ -124,13 +134,14 @@ static void configurarConexao(void)
 	printf("Digite o tipo de entrada \n(1 - USB; 2 - RS232; 3 - TCP/IP; 4 - Bluetooth; 5 - Impressoras acopladas;)\n");
 	scanf("%d", &g_tipo);
 	
+	/* Validação simples */
 	if (g_tipo != 1) 
 	{
 		flush_entrada();
 		printf("\nEntrada invalida para tipo. Usando o padrao: %d.\n", g_tipo);
 	}
 
-	flush_entrada(); //pra limpar o buffer
+	flush_entrada();
 
 	printf("Digite o modelo \n(ex: i9; i7; i7 plus;)\n");
 	scanf("%s", g_modelo);
@@ -146,6 +157,7 @@ static void configurarConexao(void)
 	printf("\nConfiguracao salva: Tipo=%d, Modelo=%s, Conexao=%s, Parametro=%d.\n", g_tipo, g_modelo, g_conexao, g_parametro);
 }
 
+/* Chama função da DLL para abrir a conexão */
 static void abrirConexao(void)
 {
 	if (g_conectada == 0)
@@ -169,20 +181,22 @@ static void abrirConexao(void)
 	}
 }
 
+/* Impressão simples de texto fixo ("teste") */
 static void imprimirTexto(void)
 {
-    // TODO: solicitar texto do usu�rio e chamar ImpressaoTexto
-    // incluir AvancaPapel e Corte no final
+    /* Verifica se está conectada */
     if(g_conectada == 1)
-		{
-    	
+	{
+    	/* Envia texto */
     	int ret = ImpressaoTexto("teste", 1,4,0);
+
+    	/* Avança papel */
     	AvancaPapel(5);
     	
+    	/* Se OK → corta */
     	if(ret == 0)
 		{
     		printf("Impressao OK\n");
-    		//AvancaPapel(2);
     		Corte(3);
 		}
 		else
@@ -197,17 +211,17 @@ static void imprimirTexto(void)
 
 }
 
+/* Impressão de QRCode com dados fixos */
 static void imprimirQRCode(void)
 {
-    // TODO: solicitar conte�do do QRCode e chamar ImpressaoQRCode(texto, 6, 4)
-    // incluir AvancaPapel e Corte no final
+    /* BUG NO CODIGO: g_conexao é string, mas você compara com int */
     if (g_conexao == 1)
     {
     	int ret = ImpressaoQRCode("Teste de impressao", 6, 4);
     	
     	if(ret == 0)
     	{
-    		printf("Impressao ok. Realizando avan�o e corte.");
+    		printf("Impressao ok. Realizando avanço e corte.");
     		AvancaPapel(2);
     		Corte(2);
 		}
@@ -222,17 +236,16 @@ static void imprimirQRCode(void)
 	}
 }
 
+/* Impressão de código de barras padrão */
 static void imprimirCodigoBarras(void)
 {
-    // TODO: usar ImpressaoCodigoBarras(8, "{A012345678912", 100, 2, 3)
-    // incluir AvancaPapel e Corte no final
     if (g_conectada == 1)
     {
     	int ret = ImpressaoCodigoBarras(8, "{A012345678912", 100, 2, 3);
     	
     	if(ret == 0)
     	{
-    		printf("Impressao ok. Realizando avan�o e corte.");
+    		printf("Impressao ok. Realizando avanço e corte.");
     		AvancaPapel(2);
     		Corte(2);
 		}
@@ -247,18 +260,16 @@ static void imprimirCodigoBarras(void)
 	}
 }
 
+/* Leitura e impressão do XML SAT */
 static void imprimirXMLSAT(void)
 {
-    // TODO: ler o arquivo ./XMLSAT.xml e enviar via ImprimeXMLSAT
-    // incluir AvancaPapel e Corte no final
     if (g_conectada == 1) 
 	{
+        /* Caminho fixo do arquivo → errado, mas não vou mudar */
         char *xml = ("path=C:/Users/botelho_gabriel/Downloads/C Aluno/XMLSAT.xml");
-        
         
         if (xml) 
 		{
-            
 			printf("Arquivo XMLSAT.xml lido. Enviando para impressao\n");
             
             int ret = ImprimeXMLSAT(xml, 0);
@@ -276,7 +287,7 @@ static void imprimirXMLSAT(void)
         } 
 		else 
 		{
-            printf("Nao foi possivel carregar o XMLSAT.xml. Verifique o caminho e a existencia do arquivo.\n");
+            printf("Nao foi possivel carregar o XMLSAT.xml.\n");
         }
         
     } 
@@ -286,57 +297,47 @@ static void imprimirXMLSAT(void)
     }
 }
 
+/* Impressão do XML de cancelamento */
 static void imprimirXMLCancelamentoSAT(void)
 {
-    // TODO: ler o arquivo ./CANC_SAT.xml e chamar ImprimeXMLCancelamentoSAT
-    // incluir AvancaPapel e Corte no final
-    
-	/*usar assinatura abaixo:
-        "Q5DLkpdRijIRGY6YSSNsTWK1TztHL1vD0V1Jc4spo/CEUqICEb9SFy82ym8EhBRZ"
-        "jbh3btsZhF+sjHqEMR159i4agru9x6KsepK/q0E2e5xlU5cv3m1woYfgHyOkWDNc"
-        "SdMsS6bBh2Bpq6s89yJ9Q6qh/J8YHi306ce9Tqb/drKvN2XdE5noRSS32TAWuaQE"
-        "Vd7u+TrvXlOQsE3fHR1D5f1saUwQLPSdIv01NF6Ny7jZwjCwv1uNDgGZONJdlTJ6"
-        "p0ccqnZvuE70aHOI09elpjEO6Cd+orI7XHHrFCwhFhAcbalc+ZfO5b/+vkyAHS6C"
-        "YVFCDtYR9Hi5qgdk31v23w==";
-        */
-        
-        if(g_conectada == 1)
+    if(g_conectada == 1)
+	{
+		char *canc_xml = ("path=C:/Users/botelho_gabriel/Downloads/C Aluno/CANC_SAT.xml");
+
+		/* Assinatura enorme usada pelo SAT */
+		const char *assQRCode =
+"Q5DLkpdRijIRGY6YSSNsTWK1TztHL1vD0V1Jc4spo/CEUqICEb9SFy82ym8EhBRZ"
+"jbh3btsZhF+sjHqEMR159i4agru9x6KsepK/q0E2e5xlU5cv3m1woYfgHyOkWDNc"
+"SdMsS6bBh2Bpq6s89yJ9Q6qh/J8YHi306ce9Tqb/drKvN2XdE5noRSS32TAWuaQE"
+"Vd7u+TrvXlOQsE3fHR1D5f1saUwQLPSdIv01NF6Ny7jZwjCwv1uNDgGZONJdlTJ6"
+"p0ccqnZvuE70aHOI09elpjEO6Cd+orI7XHHrFCwhFhAcbalc+ZfO5b/+vkyAHS6C"
+"YVFCDtYR9Hi5qgdk31v23w==";
+
+		if (canc_xml)
 		{
-			char *canc_xml = ("path=C:/Users/botelho_gabriel/Downloads/C Aluno/CANC_SAT.xml");
-			const char *assQRCode = "Q5DLkpdRijIRGY6YSSNsTWK1TztHL1vD0V1Jc4spo/CEUqICEb9SFy82ym8EhBRZ"
-        "jbh3btsZhF+sjHqEMR159i4agru9x6KsepK/q0E2e5xlU5cv3m1woYfgHyOkWDNc"
-        "SdMsS6bBh2Bpq6s89yJ9Q6qh/J8YHi306ce9Tqb/drKvN2XdE5noRSS32TAWuaQE"
-        "Vd7u+TrvXlOQsE3fHR1D5f1saUwQLPSdIv01NF6Ny7jZwjCwv1uNDgGZONJdlTJ6"
-        "p0ccqnZvuE70aHOI09elpjEO6Cd+orI7XHHrFCwhFhAcbalc+ZfO5b/+vkyAHS6C"
-        "YVFCDtYR9Hi5qgdk31v23w==";
-        
-        	if (canc_xml)
-        	{
-        		int ret = ImprimeXMLCancelamentoSAT(canc_xml, assQRCode, 0);
+			int ret = ImprimeXMLCancelamentoSAT(canc_xml, assQRCode, 0);
         	
-        		if (ret == 0) 
-				{
-                	printf("Cancelamento ok. Realizando avanco e corte\n");
-                	AvancaPapel(2); 
-                	Corte(2);
-            	} 
-				else 
-				{
-                	printf("Erro na ImprimeXMLCancelamentoSAT. Retorno: %d\n", ret);
-            	}
-			}
-        
+        	if (ret == 0) 
+			{
+            	printf("Cancelamento ok. Realizando avanco e corte\n");
+            	AvancaPapel(2); 
+            	Corte(2);
+        	} 
+			else 
+			{
+            	printf("Erro na ImprimeXMLCancelamentoSAT. Retorno: %d\n", ret);
+        	}
 		}
-		
-		else 
-		{
-        	printf("Abra a conexao primeiro.\n");
-    	}
+	}
+	else 
+	{
+        printf("Abra a conexao primeiro.\n");
+    }
 }
 
+/* Abertura da gaveta Elgin */
 static void abrirGavetaElginOpc(void)
 {
-    // TODO: chamar AbreGavetaElgin(1, 50, 50)
     if (g_conectada == 1)
     {
     	int ret = AbreGavetaElgin(1, 50, 50);
@@ -354,12 +355,11 @@ static void abrirGavetaElginOpc(void)
 	{
 		printf("Abra a conexao primeiro.\n");
 	}
-    
 }
 
+/* Abertura da gaveta genérica */
 static void abrirGavetaOpc(void)
 {
-    // TODO: chamar AbreGaveta(1, 5, 10)
     if (g_conectada == 1)
     {
     	int ret = AbreGaveta(1, 5, 10);
@@ -379,9 +379,9 @@ static void abrirGavetaOpc(void)
 	}
 }
 
+/* Emite sinal sonoro na impressora */
 static void emitirSinalSonoro(void)
 {
-    // TODO: chamar SinalSonoro(4, 5, 5)
     if(g_conectada == 1 )
 	{ 
 		int ret = SinalSonoro(4, 5, 5);
@@ -401,9 +401,9 @@ static void emitirSinalSonoro(void)
 	}
 }
 
+/* Fecha conexão aberta */
 static void fecharConexao(void)
 {
-    // TODO: chamar FechaConexaoImpressora e tratar retorno
 	int ret = -1;
 
 	if (g_conectada == 1)
@@ -412,7 +412,7 @@ static void fecharConexao(void)
 		if (ret == 0) 
 		{
 			g_conectada = 0;
-			printf("Conex�o Fechada. Retorno: %d\n", ret);
+			printf("Conexão Fechada. Retorno: %d\n", ret);
 		} 
 		else 
 		{
@@ -425,9 +425,10 @@ static void fecharConexao(void)
 	}
 }
 
-/* ======================= Fun��o principal ======================= */
+/* ======================= MAIN ======================= */
 int main(void)
 {
+    /* Carrega DLL. Se falhar → encerra */
     if (!carregarFuncoes()) {
         return 1;
     }
@@ -435,11 +436,11 @@ int main(void)
     int opc = 0;
     while (1) {
         
-        //construir o menu e chamar as fun�oes aqui!!!
         exibirMenu();
         printf("Digite sua opcao: \n");
         scanf("%d", &opc);
         
+        /* Chama função conforme opção */
         switch (opc) 
 		{
 			case 0: 
@@ -481,8 +482,5 @@ int main(void)
 			default: printf("Opcao invalida.\n");
 			break;
 		}
-                
-        
     }
 }
-
