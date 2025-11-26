@@ -148,8 +148,6 @@ static void configurarConexao(void)
 	printf("Digite o parametro \n(baudrate/portaTCP 0 - padrao)\n");
 	scanf("%d", &g_parametro);
 	
-	flush_entrada();
-	
 	printf("\nConfiguracao salva: Tipo=%d, Modelo=%s, Conexao=%s, Parametro=%d.\n", g_tipo, g_modelo, g_conexao, g_parametro);
 }
 
@@ -480,4 +478,5 @@ int main(void)
 		}
     }
 }
+
 
