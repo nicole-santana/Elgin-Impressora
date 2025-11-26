@@ -98,7 +98,7 @@ Corte(2);
 
 ---
 
-### **6 — Imprimir XML SAT**
+### **6 — Imprimir XML SAT (Nota Fiscal)**
 
 Carrega:
 
