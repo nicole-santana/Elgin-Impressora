@@ -208,8 +208,7 @@ static void imprimirTexto(void)
 /* Impressão de QRCode com dados fixos */
 static void imprimirQRCode(void)
 {
-    /* BUG NO CODIGO: g_conexao é string, mas você compara com int */
-    if (g_conexao == 1)
+    if (g_conectada == 1)
     {
     	int ret = ImpressaoQRCode("Teste de impressao", 6, 4);
     	
@@ -260,7 +259,7 @@ static void imprimirXMLSAT(void)
     if (g_conectada == 1) 
 	{
         /* Caminho fixo do arquivo → errado, mas não vou mudar */
-        char *xml = ("path=C:/Users/botelho_gabriel/Downloads/C Aluno/XMLSAT.xml");
+        char *xml = ("path=./XMLSAT.xml");
         
         if (xml) 
 		{
@@ -296,7 +295,7 @@ static void imprimirXMLCancelamentoSAT(void)
 {
     if(g_conectada == 1)
 	{
-		char *canc_xml = ("path=C:/Users/botelho_gabriel/Downloads/C Aluno/CANC_SAT.xml");
+		char *canc_xml = ("path=./CANC_SAT.xml");
 
 		/* Assinatura enorme usada pelo SAT */
 		const char *assQRCode =
@@ -478,5 +477,6 @@ int main(void)
 		}
     }
 }
+
 
 
