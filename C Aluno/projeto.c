@@ -137,12 +137,8 @@ static void configurarConexao(void)
 	/* Validação simples */
 	if (g_tipo != 1) 
 	{
-		flush_entrada();
 		printf("\nEntrada invalida para tipo. Usando o padrao: %d.\n", g_tipo);
 	}
-
-	flush_entrada();
-
 	printf("Digite o modelo \n(ex: i9; i7; i7 plus;)\n");
 	scanf("%s", g_modelo);
 		
@@ -484,3 +480,4 @@ int main(void)
 		}
     }
 }
+
