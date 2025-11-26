@@ -193,8 +193,10 @@ README.md
 
 ---
 
-# **⚠️ Observações Importantes**
+# **Grupo**
 
-* O QR Code só funciona se a conexão estiver aberta (corrigir `if (g_conexao == 1)` → `if (g_conectada == 1)`).
-* Os caminhos de XML estão hardcoded (não é ideal).
-* O menu é síncrono: a impressora sempre bloqueia até concluir.
+* André Henrique
+* Camila dos Santos
+* Gabriel de Jesus
+* Jean Mendes
+* Nicole De Sá 
